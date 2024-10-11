@@ -2,7 +2,9 @@ package com.example.employeemanagement.controller;
 
 import com.example.employeemanagement.dto.ShiftDTO;
 import com.example.employeemanagement.entity.Shift;
+import com.example.employeemanagement.service.ManagerService;
 import com.example.employeemanagement.service.ShiftService;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +16,14 @@ import java.util.List;
 @RestController
 @CrossOrigin(origins = "http://localhost:8080/")
 @RequestMapping("/api/shift")
+@AllArgsConstructor
 @Log4j2
 public class ShiftController {
     private final ShiftService shiftService;
 
-    public ShiftController(ShiftService shiftService) {
-        this.shiftService = shiftService;
-    }
+    private final ManagerService managerService;
+
+
 
     @GetMapping
     public List<Shift> getAllShifts() {
@@ -38,12 +41,10 @@ public class ShiftController {
     }
     @PreAuthorize("hasAuthority('MANAGER')")  // Only allow users with 'MANAGER' authority
     @PostMapping
-    public ResponseEntity<?> createShift(@RequestBody ShiftDTO shift) {
+    public ResponseEntity<String> createShift(@RequestBody ShiftDTO shiftDTO) {
 
         try {
-            // Attempt to save the shift
-            Shift savedShift = shiftService.saveShift(shift);
-            // Return the saved shift along with the 201 CREATED status
+            String savedShift = managerService.createAshiftAndScheduleEvaluation(shiftDTO);
             return new ResponseEntity<>(savedShift, HttpStatus.CREATED);
         } catch (Exception e) {
             // Catch any exceptions and return an error response
@@ -53,20 +54,36 @@ public class ShiftController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MANAGER')")  // Only allow users with 'MANAGER' authority
     @DeleteMapping("/{id}")
-    public void deleteShift(@PathVariable Long id) {
-        shiftService.deleteShift(id);
+    public ResponseEntity<String> deleteShift(@PathVariable Long id) {
+        try {
+            managerService.deleteShiftById(id);
+            return new ResponseEntity<>("Successfully deleted shift with id: " + id, HttpStatus.OK);
+        } catch (Exception e) {
+            // Catch any exceptions and return an error response
+            String errorMessage = "Error occurred while deleting the shift: " + e.getMessage();
+            // Return the error message along with the 500 INTERNAL_SERVER_ERROR status
+            return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
+
 
     // This method allows only users with 'EMPLOYEE' authority to add themselves to a shift
     @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('MANAGER')")
     @PostMapping("/{shiftId}/addEmployee")
     public ResponseEntity<String> addEmployeeToShift(@PathVariable Long shiftId) {
-        String result = shiftService.addEmployeeToShift(shiftId);
-        if (result.contains("Error") || result.contains("full")) {
-            return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+        try {
+            shiftService.addEmployeeToShift(shiftId);
+            return new ResponseEntity<>("Employee added to the shift.", HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND); // User or shift not found
+        } catch (IllegalStateException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST); // Shift is full or cannot add employee
+        } catch (Exception e) {
+            return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
 }
