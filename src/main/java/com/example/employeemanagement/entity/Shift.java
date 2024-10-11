@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.jobrunr.jobs.JobId;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Data // Generates getters, setters, toString, equals, and hashCode methods
@@ -42,6 +44,8 @@ public class Shift {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User postedBy;
+
+    private UUID jobId;
 
     // Check if the shift is full
     public boolean isShiftFull() {
