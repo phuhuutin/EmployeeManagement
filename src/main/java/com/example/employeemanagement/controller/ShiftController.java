@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -23,7 +25,10 @@ public class ShiftController {
 
     private final ManagerService managerService;
 
-
+    @GetMapping("/test")
+    public String test() {
+        return managerService.testEvaluate();
+    }
 
     @GetMapping
     public List<Shift> getAllShifts() {
@@ -42,6 +47,8 @@ public class ShiftController {
     @PreAuthorize("hasAuthority('MANAGER')")  // Only allow users with 'MANAGER' authority
     @PostMapping
     public ResponseEntity<String> createShift(@RequestBody ShiftDTO shiftDTO) {
+        if(Duration.between(LocalDateTime.now(),shiftDTO.getStartTime()).toMinutes() <= 0)
+            return new ResponseEntity<>("Can not add shift for the past", HttpStatus.BAD_REQUEST);
 
         try {
             String savedShift = managerService.createAshiftAndScheduleEvaluation(shiftDTO);
