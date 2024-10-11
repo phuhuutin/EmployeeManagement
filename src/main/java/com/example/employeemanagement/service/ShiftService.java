@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,7 +26,7 @@ public class ShiftService {
     private  ShiftRepository shiftRepository;
     @Autowired
     private UserRepository userRepository;
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final Logger logger = LoggerFactory.getLogger(ShiftService.class);
 
 
 
@@ -44,6 +45,13 @@ public class ShiftService {
     public Shift saveShift(ShiftDTO shiftDTO) {
         return shiftRepository.save(mapToShift(shiftDTO));
     }
+    public Shift saveShift(Shift shift) {
+        return shiftRepository.save(shift);
+    }
+
+    public void deleteShiftbyId(Long shiftId){
+        shiftRepository.deleteById(shiftId);
+    }
 
     // The mapping method belongs to the service
     private Shift mapToShift(ShiftDTO shiftDTO) {
@@ -56,7 +64,6 @@ public class ShiftService {
         User manager = userRepository.findById(shiftDTO.getPostedById())
                 .orElseThrow(() -> new IllegalArgumentException("User with ID " + shiftDTO.getPostedById() + " not found"));
         shift.setPostedBy(manager);
-
         return shift;
     }
 
@@ -98,6 +105,40 @@ public class ShiftService {
                 }
             }
         }
+        return new ArrayList<>(payrollMap.values());
+    }
+    public Shift findShiftById(Long shiftId){
+        // Fetch the shift by ID
+        return shiftRepository.findById(shiftId)
+                .orElseThrow(() -> new IllegalArgumentException("Shift not found with ID: " + shiftId));
+    }
+    public List<Payroll> singleShiftPayEvaluate(Long shiftId){
+        Map<User, Payroll> payrollMap = new HashMap<>();
+        Optional<Shift> shiftOptional = shiftRepository.findById(shiftId);
+        Shift shift;
+        if(shiftOptional.isPresent()){
+            shift = shiftOptional.get();
+        }else{
+            throw new ResourceAccessException("Error finding the shift with " + shiftId);
+        }
+            List<User> pickedShiftUser = shift.getEmployees();
+            for(ClockInOutRecord record : shift.getClockInOutRecords()){
+                //to  check if the user is scheduled to work on that shift before pay
+                if(pickedShiftUser.contains(record.getUser())){
+                    User user = record.getUser();
+                    Payroll payroll = payrollMap.getOrDefault(user,
+                            new Payroll(DataUtils.getStartOfPreviousWeek(), DataUtils.getEndOfPreviousWeek()));
+                    payroll.setUser(user);
+                    payroll.setPayRate(user.getPayRate());
+                    BigDecimal bd = BigDecimal.valueOf(record.getMinuteWorked() / 60).setScale(2, RoundingMode.HALF_UP);
+                    payroll.addtotalHoursWorked(bd.doubleValue());
+                    bd = BigDecimal.valueOf(user.getPayRate()/60 * record.getMinuteWorked()).setScale(2, RoundingMode.HALF_UP);
+                    payroll.addtotalPay(bd.doubleValue());
+                    payrollMap.put(user, payroll);
+
+                }
+            }
+
         return new ArrayList<>(payrollMap.values());
     }
 
@@ -154,41 +195,38 @@ public class ShiftService {
         return attendanceEvaluate(shifts);
     }
 
-    public String addEmployeeToShift(Long shiftId) {
-        try {
-            // Get the currently authenticated user from the SecurityContext
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();  // Retrieves the username of the authenticated user
+    public void addEmployeeToShift(Long shiftId) {
+        // Get the currently authenticated user from the SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();  // Retrieves the username of the authenticated user
 
-            // Fetch the user (employee) from the repository using the username
-            User employee = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
+        // Fetch the user (employee) from the repository using the username
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
 
-            // Fetch the shift by ID
-            Shift shift = shiftRepository.findById(shiftId)
-                    .orElseThrow(() -> new IllegalArgumentException("Shift not found with ID: " + shiftId));
+        // Fetch the shift by ID
+        Shift shift = shiftRepository.findById(shiftId)
+                .orElseThrow(() -> new IllegalArgumentException("Shift not found with ID: " + shiftId));
 
-            // Check if the shift is full
-            if (shift.isShiftFull()) {
-                logger.warn("Shift with ID {} is full. Cannot add employee with ID {}", shiftId, employee.getId());
-                return "Shift is already full!";
-            }
-
-            // Add employee to the shift
-            boolean added = shift.addEmployee(employee);
-            if (!added) {
-                return "Failed to add employee to the shift.";
-            }
-
-            // Save the updated shift
-            shiftRepository.save(shift);
-
-            logger.info("Employee with ID {} successfully added to shift with ID {}", employee.getId(), shiftId);
-            return "Employee successfully added to the shift.";
-
-        } catch (Exception e) {
-            logger.error("Error adding employee to shift with ID {}: {}", shiftId, e.getMessage());
-            return "Error adding employee to the shift: " + e.getMessage();
+        // Check if the shift is full
+        if (shift.isShiftFull()) {
+            logger.warn("Shift with ID {} is full. Cannot add employee with ID {}", shiftId, employee.getId());
+            throw new IllegalStateException("Shift is already full!");
         }
+
+        // Add employee to the shift
+        boolean added = shift.addEmployee(employee);
+        if (!added) {
+            throw new IllegalStateException("Failed to add employee to the shift.");
+        }
+
+        // Add shift to the employee's picked shifts
+        employee.getPickedShifts().add(shift);
+
+        // Save the updated shift and employee
+        shiftRepository.save(shift);
+        userRepository.save(employee);
+
+        logger.info("Employee with ID {} successfully added to shift with ID {}", employee.getId(), shiftId);
     }
 }
