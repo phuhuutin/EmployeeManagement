@@ -113,33 +113,16 @@ public class ShiftService {
                 .orElseThrow(() -> new IllegalArgumentException("Shift not found with ID: " + shiftId));
     }
     public List<Payroll> singleShiftPayEvaluate(Long shiftId){
-        Map<User, Payroll> payrollMap = new HashMap<>();
         Optional<Shift> shiftOptional = shiftRepository.findById(shiftId);
         Shift shift;
         if(shiftOptional.isPresent()){
             shift = shiftOptional.get();
+            List<Shift> shifts = new ArrayList<>();
+            shifts.add(shift);
+            return this.payEvaluate(shifts);
         }else{
             throw new ResourceAccessException("Error finding the shift with " + shiftId);
         }
-            List<User> pickedShiftUser = shift.getEmployees();
-            for(ClockInOutRecord record : shift.getClockInOutRecords()){
-                //to  check if the user is scheduled to work on that shift before pay
-                if(pickedShiftUser.contains(record.getUser())){
-                    User user = record.getUser();
-                    Payroll payroll = payrollMap.getOrDefault(user,
-                            new Payroll(DataUtils.getStartOfPreviousWeek(), DataUtils.getEndOfPreviousWeek()));
-                    payroll.setUser(user);
-                    payroll.setPayRate(user.getPayRate());
-                    BigDecimal bd = BigDecimal.valueOf(record.getMinuteWorked() / 60).setScale(2, RoundingMode.HALF_UP);
-                    payroll.addtotalHoursWorked(bd.doubleValue());
-                    bd = BigDecimal.valueOf(user.getPayRate()/60 * record.getMinuteWorked()).setScale(2, RoundingMode.HALF_UP);
-                    payroll.addtotalPay(bd.doubleValue());
-                    payrollMap.put(user, payroll);
-
-                }
-            }
-
-        return new ArrayList<>(payrollMap.values());
     }
 
     /**
@@ -189,6 +172,20 @@ public class ShiftService {
 
         return result;
     }
+
+    public List<AttendanceRecord> singleShiftAttendanceEvaluate(Long shiftId ){
+        Optional<Shift> shiftOptional = shiftRepository.findById(shiftId);
+        Shift shift;
+        if(shiftOptional.isPresent()){
+            shift = shiftOptional.get();
+            List<Shift> shifts = new ArrayList<>();
+            shifts.add(shift);
+            return this.attendanceEvaluate(shifts);
+        }else{
+            throw new ResourceAccessException("Error finding the shift with " + shiftId);
+        }
+    }
+
 
     public List<AttendanceRecord> weeklyAttendanceEvaluate(){
         List<Shift> shifts = this.getShiftsPostedInLatestWeek();
