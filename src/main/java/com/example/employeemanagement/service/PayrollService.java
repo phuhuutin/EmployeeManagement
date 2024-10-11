@@ -35,6 +35,8 @@ public class PayrollService {
     public void savePayroll(Payroll payroll){
         payrollRepository.save(payroll);
     }
+
+
     @Transactional
     public List<Payroll> weekPayEvaluation() throws RuntimeException{
         List<Payroll> payrollMap = shiftService.weeklyPayEvaluate();
@@ -63,4 +65,25 @@ public class PayrollService {
 
         return attendanceRecords;
     }
+
+    @Transactional
+    public String evaluateASingleShift(Long shiftId){
+        List<Payroll> payrollMap = shiftService.singleShiftPayEvaluate(shiftId);
+        try{
+            payrollMap.forEach(this::savePayroll);
+        } catch (Exception e){
+            throw new RuntimeException(e.getMessage() + ". Failed to save payroll");
+        }
+
+        List<AttendanceRecord> attendanceRecords = shiftService.singleShiftAttendanceEvaluate(shiftId);
+        try{
+            attendanceRecords.forEach(this.attendanceRecordService::save);
+        } catch (Exception e){
+            throw new RuntimeException(e.getMessage() + ". Failed to save AttendanceRecord");
+        }
+        logger.debug("Successfully evaluated shift with id " + shiftId);
+        return "Successfully evaluated shift with id: " + shiftId;
+
+    }
+
 }
