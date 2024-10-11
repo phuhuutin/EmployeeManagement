@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,16 +29,26 @@ public class ManagerService {
      * @param shiftDTO
      */
     public String createAshiftAndScheduleEvaluation(ShiftDTO shiftDTO) {
-
         Shift shift = shiftService.saveShift(shiftDTO);
 
         JobId jobId = BackgroundJob.schedule(
-                shift.getEndTime().plusHours(1), // Schedule 30 seconds from now
-                ()->this.payrollService.weekPayEvaluation() // Call the job method
+                shift.getEndTime().plusHours(2), // Schedule 30 seconds from now
+                ()->this.payrollService.evaluateASingleShift(shift.getId()) // Call the job method
         );
         shift.setJobId(jobId.asUUID());
         shiftService.saveShift(shift);
         return "Successfully add a shift on " + shift.getStartTime().toLocalDate().toString();
+    }
+
+    public String testEvaluate() {
+
+        BackgroundJob.schedule(
+                LocalDateTime.now().plusSeconds(30),
+                //  shift.getEndTime().plusHours(1), // Schedule 30 seconds from now
+                ()->this.payrollService.evaluateASingleShift(7L) // Call the job method
+        );
+
+        return "Successfully add a shift on ";
     }
 
 
