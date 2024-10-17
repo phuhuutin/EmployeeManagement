@@ -14,4 +14,10 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
     // Custom query to find shifts posted in the latest week (Sunday to Saturday)
     @Query("SELECT s FROM Shift s WHERE s.date BETWEEN :startOfWeek AND :endOfWeek")
     List<Shift> findShiftsPostedInLatestWeek(LocalDate startOfWeek, LocalDate endOfWeek);
+
+
+    // Method to find all shifts posted today
+    @Query("SELECT s FROM Shift s WHERE s.date = :today")
+    List<Shift> findShiftsByDate(LocalDate today);
+
 }
