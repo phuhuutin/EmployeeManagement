@@ -22,7 +22,6 @@ public class Shift {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @CreationTimestamp
     private LocalDate date;  // The date of the shift
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -37,7 +36,7 @@ public class Shift {
     @ManyToMany(mappedBy = "pickedShifts")
     private List<User> employees = new ArrayList<>();
 
-    @OneToMany(mappedBy = "shift")
+    @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL)
     private List<ClockInOutRecord> clockInOutRecords = new ArrayList<>();
 
     // Manager who posted the shift
