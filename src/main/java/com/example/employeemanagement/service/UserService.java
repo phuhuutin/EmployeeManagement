@@ -32,6 +32,11 @@ public class UserService {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    public User getUserByUsername(String username){
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
+    }
+
     public User saveUser(User user) {
         return userRepository.save(user);
     }
