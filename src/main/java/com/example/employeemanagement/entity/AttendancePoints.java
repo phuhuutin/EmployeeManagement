@@ -18,9 +18,8 @@ public class AttendancePoints {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @OneToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = true) // Allow null values
     @JsonIgnore
     private User user;
 
@@ -28,11 +27,9 @@ public class AttendancePoints {
     @OneToMany(mappedBy = "attendancePoints", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AttendanceRecord> attendanceRecords = new ArrayList<>(); // Initialize the list;
 
-
     public AttendancePoints(User user){
             this.user = user;
     }
-
 
     public int getPoints(){
         return attendanceRecords.stream()
@@ -47,6 +44,7 @@ public class AttendancePoints {
         }
         return null; // Or throw an exception if you prefer
     }
+
     public void addNewRecord(AttendanceRecord newRecord){
         this.attendanceRecords.add(newRecord);
     }
