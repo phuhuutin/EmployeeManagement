@@ -9,7 +9,6 @@ public enum AttendanceReason {
     private final int points;
     private final String name;
 
-
     AttendanceReason(int points, String name) {
         this.points = points;
         this.name = name;

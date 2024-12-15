@@ -2,6 +2,7 @@ package com.example.employeemanagement.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Data // Generates getters, setters, toString, equals, and hashCode methods
@@ -18,6 +20,10 @@ public class AttendanceRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Nullable
+    @JsonIgnore
+    private UUID jobId = null;
+
     @CreationTimestamp
     private LocalDate date;  // Date of the record
 
@@ -29,6 +35,11 @@ public class AttendanceRecord {
     @JsonIgnore
     private Shift shift;
 
+    @ManyToOne
+    @JoinColumn(name = "clock_in_out_record_id")
+    @JsonIgnore
+    private ClockInOutRecord clockInOutRecord;
+
     public AttendanceRecord(Shift shift, AttendanceReason reason){
         this.shift = shift;
         this.reason = reason;
@@ -39,7 +50,7 @@ public class AttendanceRecord {
     @JsonIgnore
     private AttendancePoints attendancePoints;
 
-    @JsonProperty("shift_id")
+    @JsonProperty("shiftId")
     public Long getShiftId() {
         return shift != null ? shift.getId() : null;
     }
