@@ -1,5 +1,7 @@
 package com.example.employeemanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,15 +20,18 @@ public class Payroll {
     private Long id;
 
     private double totalHoursWorked;  // Total hours worked in a week
-    private double totalPay;  // Total pay for the employee
+
+    private double totalPay = 0.0;  // Total pay for the employee
+
     @CreationTimestamp
     private LocalDate date;  // The date of the shift
-    private LocalDate startPayDate;  // The date of the shift
-    private LocalDate endPayDate;  // The date of the shift
 
+
+    private Long shift_id = 0L;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     private double payRate;  // Pay rate for the employee
@@ -38,8 +43,5 @@ public class Payroll {
         this.totalPay += pay;
     }
 
-    public Payroll(LocalDate startPayDate, LocalDate endPayDate){
-        this.startPayDate = startPayDate;
-        this.endPayDate = endPayDate;
-    }
+
 }

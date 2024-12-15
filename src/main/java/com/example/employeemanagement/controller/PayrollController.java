@@ -1,31 +1,38 @@
 package com.example.employeemanagement.controller;
 
+import com.example.employeemanagement.entity.AttendanceRecord;
 import com.example.employeemanagement.entity.Payroll;
+import com.example.employeemanagement.service.AttendanceRecordService;
+import com.example.employeemanagement.service.ManagerService;
 import com.example.employeemanagement.service.PayrollService;
+import lombok.AllArgsConstructor;
+import org.jobrunr.scheduling.BackgroundJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:8080/")
 @RequestMapping("/api/payroll")
+@AllArgsConstructor
 public class PayrollController {
-    @Autowired
     private PayrollService payrollService;
-    @GetMapping
-    public ResponseEntity<?> getShiftsPostedInLatestWeek() {
-        try {
-            List<Payroll> payrolls = payrollService.weekPayEvaluation();
-            return ResponseEntity.ok(payrolls);
-        } catch (Exception e) {
-            // Return error response with the exception message
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing payroll: " + e.getMessage());
+    private ManagerService managerService;
+    private AttendanceRecordService attendanceRecordService;
+    @GetMapping("/{id}")
+    private ResponseEntity<String> evaluateShiftById(@PathVariable Long id){
+        try{
+            AttendanceRecord record = attendanceRecordService.findById(id);
+            attendanceRecordService.delete(record);
+            BackgroundJob.delete(record.getJobId());
+            return ResponseEntity.ok("OK");
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+
     }
+
 }
