@@ -1,5 +1,6 @@
 package com.example.employeemanagement.dto;
 
+import com.example.employeemanagement.entity.Shift;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,5 @@ public class ShiftDTO {
     private LocalDateTime endTime;    // End time of the shift
     private int workerLimit;          // Maximum number of employees who can pick the shift
     private Long postedById;          // ID of the manager who is posting the shift
-
-
+    private Long employerId;
 }

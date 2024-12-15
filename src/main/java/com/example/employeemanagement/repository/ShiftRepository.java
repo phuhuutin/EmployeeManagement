@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -19,5 +20,8 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
     // Method to find all shifts posted today
     @Query("SELECT s FROM Shift s WHERE s.date = :today")
     List<Shift> findShiftsByDate(LocalDate today);
+
+    @Query("SELECT s FROM Shift s WHERE s.startTime > :currentTime AND s.employer.id = :employerId")
+    List<Shift> findAllShiftsAfterNow(@Param("currentTime") LocalDateTime currentTime, @Param("employerId") Long employerId);
 
 }

@@ -1,5 +1,6 @@
 package com.example.employeemanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,9 +10,7 @@ import org.jobrunr.jobs.JobId;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Data // Generates getters, setters, toString, equals, and hashCode methods
@@ -26,24 +25,30 @@ public class Shift {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    private int workerLimit;  // Maximum number of employees who can pick the shift
+    private int workerLimit = 0;  // Maximum number of employees who can pick the shift
+
+    @ManyToOne
+    @JoinColumn(name = "employer_id", nullable = false)
+    private Employer employer;
 
     // Track how many employees have picked the shift
     @Column(nullable = false)
+
     private int currentWorkers = 0;
 
     // Employees who picked this shift
     @ManyToMany(mappedBy = "pickedShifts")
-    private List<User> employees = new ArrayList<>();
+    private Set<User> employees = new HashSet<>();
 
     @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<ClockInOutRecord> clockInOutRecords = new ArrayList<>();
 
     // Manager who posted the shift
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User postedBy;
-
+     private User postedBy;
+    @JsonIgnore
     private UUID jobId;
 
     // Check if the shift is full
@@ -79,7 +84,27 @@ public class Shift {
                 '}';
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Shift otherUser = (Shift)obj;
+        return this.getId().equals(otherUser.getId());
+    }
 
+    public ShiftData toShiftData(User user) {
+        // Find the ClockInOutRecord for the given user
+        Optional<ClockInOutRecord> userClockRecord = clockInOutRecords.stream()
+                .filter(clock -> clock.getUser().equals(user))
+                .findFirst();
+        // Map the current Shift and userClockRecord to a ShiftData object
+        ShiftData shiftData = new ShiftData();
+        shiftData.setId(this.id);
+        shiftData.setStartTime(this.startTime);
+        shiftData.setEndTime(this.endTime);
+        return shiftData;
+    }
 
 
 }
