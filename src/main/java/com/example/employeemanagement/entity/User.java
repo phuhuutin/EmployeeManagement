@@ -1,6 +1,7 @@
 package com.example.employeemanagement.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +10,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data // Generates getters, setters, toString, equals, and hashCode methods
@@ -31,25 +34,35 @@ public class User implements UserDetails {
 
     private double payRate;  // Pay rate for the employee
 
+    @ManyToOne
+    @JoinColumn(name = "employer_id", nullable = true)
+    private Employer employer;
 
     // Role can be "MANAGER" or "EMPLOYEE"
     private String role;
 
     // Employees can pick multiple shifts
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) // Cascade persist and merge operations
     @JoinTable(
             name = "user_shifts",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "shift_id")
     )
     @JsonIgnore
-    private List<Shift> pickedShifts;
+    private Set<Shift> pickedShifts = new HashSet<>();
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "attendance_points_id")
+    @Nullable
     private AttendancePoints attendancePoints ;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private Set<Report> reports = new HashSet<>();
 
 
     @Override
+    @JsonIgnore // Ignore the authorities field
+
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(() -> this.role);
     }
@@ -73,5 +86,30 @@ public class User implements UserDetails {
         }
         User otherUser = (User)obj;
         return this.getId().equals(otherUser.getId());
+    }
+
+    // Jackson will not serialize these fields
+    @Override
+    @JsonIgnore // Ignore the authorities field
+    public boolean isEnabled() {
+        return true; // Or implement your own logic
+    }
+
+    @Override
+    @JsonIgnore // Ignore the credentialsNonExpired field
+    public boolean isCredentialsNonExpired() {
+        return true; // Or implement your own logic
+    }
+
+    @Override
+    @JsonIgnore // Ignore the accountNonExpired field
+    public boolean isAccountNonExpired() {
+        return true; // Or implement your own logic
+    }
+
+    @Override
+    @JsonIgnore // Ignore the accountNonLocked field
+    public boolean isAccountNonLocked() {
+        return true; // Or implement your own logic
     }
 }
