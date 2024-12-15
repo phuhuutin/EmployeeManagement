@@ -34,7 +34,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/user/signup").permitAll() // Allow registration without authentication
+                        .requestMatchers("/api/user/login").permitAll() // Allow registration without authentication
 //                        .requestMatchers("/api/user").hasAnyAuthority("EMPLOYEE", "MANAGER") // Allow EMPLOYEE and MANAGER roles
 //                        .anyRequest().authenticated() // All other requests require authentication
                                 .anyRequest().permitAll()
