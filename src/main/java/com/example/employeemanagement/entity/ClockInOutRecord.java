@@ -2,12 +2,15 @@ package com.example.employeemanagement.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data // Generates getters, setters, toString, equals, and hashCode methods
@@ -17,8 +20,10 @@ public class ClockInOutRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-     private LocalDateTime clockInTime;
-     private LocalDateTime clockOutTime;
+    @Nullable
+    private LocalDateTime clockInTime = null;
+    @Nullable
+    private LocalDateTime clockOutTime = null;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -30,6 +35,17 @@ public class ClockInOutRecord {
     @JsonIgnore
     private Shift shift;
 
+    @OneToOne
+    @Nullable
+    @JoinColumn(name = "payroll_id")
+    @JsonIgnore
+    private Payroll payroll = null;
+
+    @OneToMany(mappedBy = "clockInOutRecord")
+    @Nullable
+    @JsonIgnore
+    private List<AttendanceRecord> attendanceRecords = new ArrayList<>();
+
     @JsonProperty("shift_id")
     public Long getShiftId() {
         return shift != null ? shift.getId() : null;
@@ -40,8 +56,14 @@ public class ClockInOutRecord {
         return user != null ? user.getId() : null;
     }
     public double getMinuteWorked(){
-        return java.time.Duration.between(this.getClockInTime(), this.getClockOutTime()).toMinutes();
+        if(this.clockInTime != null && this.clockOutTime != null) {
+            return java.time.Duration.between(this.getClockInTime(), this.getClockOutTime()).toMinutes();
+        }
+        else
+            return 0;
     }
+
+
     @Override
     public String toString() {
         return "ClockInOutRecord{" +
@@ -50,8 +72,24 @@ public class ClockInOutRecord {
                 ", clockOutTime=" + (clockOutTime != null ? clockOutTime.toString() : "Not clocked out") +
                 ", userId=" + getUserId() +
                 ", shiftId=" + getShiftId() +
-                ", minutesWorked=" + getMinuteWorked() +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        ClockInOutRecord otherClock = (ClockInOutRecord)obj;
+        return this.getId().equals(otherClock.getId());
+    }
+
+    public ClockInOutRecordData toClockInOutRecordData(){
+        ClockInOutRecordData clockData = new ClockInOutRecordData();
+        clockData.setId(this.id);
+        clockData.setClockInTime(this.clockInTime);
+        clockData.setClockOutTime(this.clockOutTime);
+        return clockData;
     }
 
 }
