@@ -5,11 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class SignUpRequest {
+@AllArgsConstructor
+public class UserLoginDTO {
     private String username;
     private String password;
-    private String email;
-    private Long employerId;
 }
