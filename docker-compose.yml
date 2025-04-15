@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis-stack
+    restart: always
+    ports:
+      - "6379:6379"  # Redis database port
+      - "8001:8001"  # RedisInsight UI port
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+    driver: local

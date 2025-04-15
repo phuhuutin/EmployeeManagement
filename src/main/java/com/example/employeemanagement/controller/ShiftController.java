@@ -1,15 +1,15 @@
 package com.example.employeemanagement.controller;
 
+import com.example.employeemanagement.dto.FindShift;
 import com.example.employeemanagement.dto.ShiftDTO;
 import com.example.employeemanagement.dto.SingleUserShiftData;
-import com.example.employeemanagement.entity.ClockInOutRecord;
 import com.example.employeemanagement.entity.Shift;
+import com.example.employeemanagement.redis.service.UserShiftsCacheService;
 import com.example.employeemanagement.service.ClockInAndOutService;
 import com.example.employeemanagement.service.ManagerService;
 import com.example.employeemanagement.service.ShiftService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AuthorizationServiceException;
@@ -20,7 +20,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:8080/")
@@ -31,7 +30,22 @@ public class ShiftController {
     private final ShiftService shiftService;
     private final ManagerService managerService;
     private ClockInAndOutService clockInAndOutService;
+    private final UserShiftsCacheService userShiftsCacheService;
 
+
+//    @GetMapping("/test/{id}")
+//    public ResponseEntity<?> test(@PathVariable Long id) {
+//        try {
+//           // userShiftsCacheService.updateUserShiftsCache(id);
+//            return ResponseEntity.ok("Cache updated for user ID: " + id);
+//        } catch (NoResourceFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body("Could not find/access the shifts for the current user");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("An unexpected error occurred. Please try again later.");
+//        }
+//    }
     @PreAuthorize("hasAuthority('MANAGER')")  // Only allow users with 'MANAGER' authority
     @GetMapping
     public List<Shift> getAllShifts() {
@@ -40,7 +54,7 @@ public class ShiftController {
 
     @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('MANAGER')")
     @GetMapping("/getshifts/{employerId}")
-    public List<Shift> getAllShiftsAfterNow(@PathVariable Long employerId) {
+    public List<FindShift> getAllShiftsAfterNow(@PathVariable Long employerId) {
         return shiftService.findShiftAfterNow(employerId);
     }
 
@@ -119,13 +133,13 @@ public class ShiftController {
     }
     @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('MANAGER')")
     @PostMapping("/{shiftId}/drop")
-    public ResponseEntity<String> dropShift(@PathVariable Long shiftId) {
-        try {
-            shiftService.dropShift(shiftId);
+    public ResponseEntity<String> dropShift(@PathVariable Long shiftId) throws Exception {
+//        try {
+          shiftService.dropShift(shiftId);
             return new ResponseEntity<>("The employee dropped the shift.", HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+//        } catch (Exception e) {
+//            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
     }
 
 

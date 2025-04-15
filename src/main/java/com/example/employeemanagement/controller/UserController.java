@@ -4,6 +4,8 @@ import com.example.employeemanagement.dto.*;
 import com.example.employeemanagement.entity.AttendanceRecord;
 import com.example.employeemanagement.entity.Payroll;
 import com.example.employeemanagement.entity.User;
+import com.example.employeemanagement.redis.UserCache;
+import com.example.employeemanagement.redis.service.UserCacheService;
 import com.example.employeemanagement.repository.AttendancePointsRepository;
 import com.example.employeemanagement.security.AppUserDetailService;
 import com.example.employeemanagement.security.CustomAuthenticationManager;
@@ -39,6 +41,7 @@ public class UserController {
     private final PayrollService payrollService;
     private final AppUserDetailService appUserDetailService;
     private final UserService userService;
+    private final UserCacheService userCacheService;
     @Autowired
     private final AttendanceRecordService attendanceRecordService;
     private final EmployerService employerService;
@@ -49,6 +52,7 @@ public class UserController {
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try{
             User user = userService.getUserById(id);
+            userCacheService.save(user, UserCache.CACHE_TTL);
             return ResponseEntity.ok(user);
         }catch (EntityNotFoundException e){
             return ResponseEntity.status(404).body(e.getMessage());

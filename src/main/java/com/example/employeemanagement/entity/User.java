@@ -1,5 +1,6 @@
 package com.example.employeemanagement.entity;
 
+import com.example.employeemanagement.redis.UserCache;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
@@ -111,5 +112,9 @@ public class User implements UserDetails {
     @JsonIgnore // Ignore the accountNonLocked field
     public boolean isAccountNonLocked() {
         return true; // Or implement your own logic
+    }
+
+    public UserCache toUserCache() {
+        return new UserCache(this.id, this.username, this.email, this.role);
     }
 }

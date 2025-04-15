@@ -1,4 +1,5 @@
 package com.example.employeemanagement.entity;
+import com.example.employeemanagement.redis.EmployerCache;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -40,5 +41,9 @@ public class Employer {
         }
         Employer otherEmployer = (Employer)obj;
         return this.getId().equals(otherEmployer.getId());
+    }
+
+    public EmployerCache toEmployerCache() {
+        return new EmployerCache(this.id, this.name, this.address.MaptoAddressCache());
     }
 }

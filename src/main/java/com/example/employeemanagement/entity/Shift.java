@@ -1,5 +1,6 @@
 package com.example.employeemanagement.entity;
 
+import com.example.employeemanagement.redis.FindShiftCache;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.jobrunr.jobs.JobId;
+import java.util.stream.Collectors;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -106,5 +108,19 @@ public class Shift {
         return shiftData;
     }
 
+    public FindShiftCache toFindShiftCache() {
+        return new FindShiftCache(
+                this.id,
+                this.date,
+                this.startTime,
+                this.endTime,
+                this.isShiftFull(),
+                this.employees.stream().map(User::getId).collect(Collectors.toSet()),
+                this.workerLimit,
+                this.currentWorkers,
+                this.postedBy.getId(),
+                this.employer.getId()
+        );
+    }
 
 }

@@ -10,13 +10,14 @@ import com.example.employeemanagement.service.ClockInAndOutService;
 import com.example.employeemanagement.service.PayrollService;
 import com.example.employeemanagement.service.ShiftService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -28,7 +29,6 @@ public class ClockInOutRecordController {
     private AttendanceRecordService attendanceRecordService;
     private PayrollService payrollService;
     private ShiftService shiftService;
-
 
     @PreAuthorize( "hasAuthority('MANAGER')")
     @Transactional
@@ -66,6 +66,7 @@ public class ClockInOutRecordController {
                 });
                 clock.setAttendanceRecords(recordList);
             clockInAndOutService.save(clock);
+            shiftService.updateUserShiftsCache(clock.getUserId());
             return ResponseEntity.ok(clock);
         }catch(Exception e){
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -77,6 +78,10 @@ public class ClockInOutRecordController {
     @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('MANAGER')")
     @PostMapping("/{shiftId}")
     public ClockInOutRecord clockIn( @PathVariable Long shiftId ){
-        return clockInAndOutService.clockIn(shiftId);
+        try {
+            return clockInAndOutService.clockIn(shiftId);
+        } catch (NoResourceFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
+        }
     }
 }

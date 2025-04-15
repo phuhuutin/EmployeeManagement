@@ -1,5 +1,6 @@
 package com.example.employeemanagement.entity;
 
+import com.example.employeemanagement.redis.ClockInOutRecordCache;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
@@ -90,6 +91,17 @@ public class ClockInOutRecord {
         clockData.setClockInTime(this.clockInTime);
         clockData.setClockOutTime(this.clockOutTime);
         return clockData;
+    }
+
+    public ClockInOutRecordCache toClockInOutRecordCache(){
+        ClockInOutRecordCache cache = new ClockInOutRecordCache();
+        cache.setId(this.id);
+        cache.setClockInTime(this.clockInTime);
+        cache.setClockOutTime(this.clockOutTime);
+        cache.setMinuteWorked(this.getMinuteWorked());
+        cache.setUser_id(this.getUserId());
+        cache.setShift_id(this.getShiftId());
+        return cache;
     }
 
 }

@@ -56,4 +56,9 @@ public class EmployerService {
 
         return userService.signUpUser(signUpRequest, "MANAGER");
     }
+
+    public Employer getEmployerById(Long employerId) {
+        return employerRepository.findById(employerId)
+                .orElseThrow(() -> new IllegalArgumentException("Employer not found with ID: " + employerId));
+    }
 }

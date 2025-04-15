@@ -3,14 +3,14 @@ package com.example.employeemanagement.service;
 import com.example.employeemanagement.entity.ClockInOutRecord;
 import com.example.employeemanagement.entity.Shift;
 import com.example.employeemanagement.entity.User;
+import com.example.employeemanagement.redis.service.UserShiftsCacheService;
 import com.example.employeemanagement.repository.ClockInOutRecordRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,6 +20,7 @@ public class ClockInAndOutService {
      private final ShiftService shiftService;
      private final UserService userService;
      private final ClockInOutRecordRepository clockInOutRecordRepository;
+     private final UserShiftsCacheService userShiftsCacheService;
 
 
     public ClockInOutRecord save(ClockInOutRecord clock){
@@ -33,14 +34,14 @@ public class ClockInAndOutService {
         return clockInOutRecordRepository.findById(id).orElseThrow();
     }
 
-    public ClockInOutRecord clockIn(Long shiftId){
+    public ClockInOutRecord clockIn(Long shiftId) throws NoResourceFoundException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         Shift shift = shiftService.getShiftById(shiftId);
-        if(!LocalDate.now().equals(shift.getDate())){
-            throw new IllegalArgumentException("You can't clock for this shift today.");
-        }
+//        if(!LocalDate.now().equals(shift.getDate())){
+//            throw new IllegalArgumentException("You can't clock for this shift today.");
+//        }
 
         User user = userService.getUserByUsername(username);
         List<ClockInOutRecord> clockList = shift.getClockInOutRecords();
@@ -63,6 +64,7 @@ public class ClockInAndOutService {
         else
             clock.setClockOutTime(LocalDateTime.now());
         clockInOutRecordRepository.save(clock);
+        shiftService.updateUserShiftsCache(user.getId());
         return clock;
 
     }
